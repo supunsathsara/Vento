@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Browse from './routes/Browse.tsx';
 import EventDetails from './routes/EventDetails.tsx';
 import TicketView from './routes/TicketView.tsx';
+import VendorDashboard from './routes/VendorDashboard.tsx';
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
   {
     path: "/ticket/:ticketId",
     element: <TicketView />,
+  },
+  {
+    path: "/vendor/:vendorId",
+    element: <VendorDashboard />,
   },
   {
     path: "*",

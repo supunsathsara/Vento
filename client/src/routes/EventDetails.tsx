@@ -62,7 +62,7 @@ export default function EventDetails() {
             <p>Location: {event.location}</p>
             <p>Category: {event.category}</p>
             <p className="text-purple-500 text-xl">
-              Price: ${event.price.toFixed(2)}
+              Price: Rs.{event.price.toFixed(2)}
             </p>
             <p>Available Tickets: {event.availableTickets}</p>
           </div>
