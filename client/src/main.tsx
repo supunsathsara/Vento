@@ -13,6 +13,7 @@ import VendorDashboard from "./routes/VendorDashboard.tsx";
 import AuthLayout from "./routes/AuthLayout.tsx";
 import Login from "./routes/Login.tsx";
 import Register from "./routes/Register.tsx";
+import EventManage from "./routes/EventManage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -45,8 +46,12 @@ const router = createBrowserRouter([
     element: <TicketView />,
   },
   {
-    path: "/vendor/:vendorId",
+    path: "/vendor",
     element: <VendorDashboard />,
+  },
+  {
+    path: "/vendor/:eventId",
+    element: <EventManage />,
   },
   {
     path: "*",
