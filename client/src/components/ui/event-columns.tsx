@@ -9,6 +9,9 @@ import {
 import { Event } from "@/types/index";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
+import EditEvent from "../EditEvent";
+import DeleteEvent from "../DeleteEvent";
+import { Link } from "react-router-dom";
 
 export const eventColumns: ColumnDef<Event>[] = [
   {
@@ -19,6 +22,14 @@ export const eventColumns: ColumnDef<Event>[] = [
   {
     accessorKey: "name",
     header: "Title",
+    cell: ({ row }) => {
+      const event = row.original;
+      return (
+        <Link to={`/vendor/${event.id}`} className="font-medium hover:underline">
+          {event.name}
+        </Link>
+      );
+    },
   },
   {
     accessorKey: "category",
@@ -42,7 +53,11 @@ export const eventColumns: ColumnDef<Event>[] = [
     cell: ({ row }) => {
       const event = row.original;
       return (
-        <div className={`font-medium ${event.availableTickets < 10 ? 'text-red-500' : ''}`}>
+        <div
+          className={`font-medium ${
+            event.availableTickets < 10 ? "text-red-500" : ""
+          }`}
+        >
           {event.availableTickets}
         </div>
       );
@@ -83,13 +98,13 @@ export const eventColumns: ColumnDef<Event>[] = [
             >
               Copy Title
             </DropdownMenuItem>
+
+            <Link to={`/vendor/${event.id}`}>
+              <DropdownMenuItem>View Details</DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Edit Event
-            </DropdownMenuItem>
+            <EditEvent event={event} />
+            <DeleteEvent event={event} />
           </DropdownMenuContent>
         </DropdownMenu>
       );

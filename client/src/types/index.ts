@@ -7,13 +7,25 @@ export interface Event {
   availableTickets: number;
   location: string;
   category: string;
+  vendorId: string;
 }
 
-export interface TicketDetails {
+export interface Ticket {
   id: string;
+  eventId: string;
   customerName: string;
-  email: string;
-  paymentStatus: "paid" | "pending" | "failed";
+  customerEmail: string;
+  quantity: number;
   purchaseDate: string;
-  eventName: string;
+  status: 'pending' | 'paid' | 'failed';
+}
+
+export interface AuthResponse {
+  message: string;
+  token: string;
+}
+
+export interface ApiError {
+  message: string;
+  errors?: Record<string, string[]>;
 }
