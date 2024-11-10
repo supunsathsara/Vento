@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,11 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-
+import { useMutation } from "@tanstack/react-query";
+import { auth } from "@/lib/api";
 
 const passwordSchema = z
   .string()
-  .min(6, "Password must be at least 6 characters long")
+  .min(6, "Password must be at least 6 characters long");
 
 const registerSchema = z
   .object({
@@ -26,11 +28,26 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const { toast } = useToast();
   const navigate = useNavigate();
 
-
+  const registerMutation = useMutation({
+    mutationFn: () => auth.register(email, password),
+    onSuccess: () => {
+      toast({
+        title: "Registration Successful",
+        description: "You have successfully registered. Please login.",
+      });
+      navigate("/login");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Registration Failed",
+        description: error.response?.data?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -40,15 +57,12 @@ const Register = () => {
       toast({
         title: "Validation Error",
         description: validation.error.errors.map((err) => err.message).join(", "),
+        variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Registration Successful",
-      description: "You have successfully registered. Please login.",
-    });
-    navigate("/login");
+    registerMutation.mutate();
   };
 
   return (
@@ -56,7 +70,7 @@ const Register = () => {
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">Register</h1>
         <p className="text-balance text-muted-foreground">
-          Get started with Vento
+          Create an account to start selling tickets
         </p>
       </div>
       <form onSubmit={handleSubmit}>
@@ -65,54 +79,46 @@ const Register = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              name="email"
               type="email"
               placeholder="m@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={registerMutation.isPending}
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-            </div>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
-              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={registerMutation.isPending}
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-            </div>
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
-              id="confirm-password"
-              name="confirm-password"
+              id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              disabled={registerMutation.isPending}
             />
           </div>
-
-          <div className="text-sm text-muted-foreground">
-            <p>Password must :</p>
-            <ul className="list-disc list-inside">
-              <li>At least 6 characters long</li>
-            </ul>
-          </div>
-
-          <Button type="submit" className="w-full">
-            Register
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={registerMutation.isPending}
+          >
+            {registerMutation.isPending ? "Creating account..." : "Create account"}
           </Button>
         </div>
       </form>
-      <div className="mt-4 text-center text-sm">
+      <div className="text-center text-sm">
         Already have an account?{" "}
         <Link to="/login" className="underline">
           Login

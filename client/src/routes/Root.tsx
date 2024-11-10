@@ -35,7 +35,7 @@ export default function Root() {
                 Browse Events
               </Button>
             </Link>
-            <Link to="/create-event">
+            <Link to="/register">
               <Button variant="outline" className="bg-slate-500 text-lg px-8 py-4">
                 Host Event
               </Button>

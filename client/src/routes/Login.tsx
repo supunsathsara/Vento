@@ -1,22 +1,41 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { auth } from "@/lib/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
+  const loginMutation = useMutation({
+    mutationFn: () => auth.login(email, password),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onSuccess: (data) => {
+      toast({
+        title: "Login Successful",
+        description: "You have successfully logged in.",
+      });
+      navigate("/vendor");
+    },
+    onError: (error) => {
+      toast({
+        title: "Login Failed",
+        description: (error as any).response?.data?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Login Successful",
-      description: "You have successfully logged in.",
-    });
+    loginMutation.mutate();
   };
 
   return (
@@ -39,6 +58,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loginMutation.isPending}
             />
           </div>
           <div className="grid gap-2">
@@ -58,13 +78,15 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loginMutation.isPending}
             />
           </div>
           <Button
             type="submit"
             className="w-full"
+            disabled={loginMutation.isPending}
           >
-            Login
+            {loginMutation.isPending ? "Logging in..." : "Login"}
           </Button>
         </div>
       </form>
