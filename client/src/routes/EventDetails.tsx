@@ -1,54 +1,82 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Event } from "@/types";
-import { useState } from "react";
+import { events, tickets } from "@/lib/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
+import { z } from "zod";
 
-//! Dummy data
-const dummyEvents: Record<string, Event> = {
-  "1": {
-    id: "1",
-    name: "Summer Music Festival",
-    date: "2024-07-15",
-    time: "18:00",
-    price: 49.99,
-    availableTickets: 500,
-    location: "Central Park",
-    category: "Music",
-  },
-};
+const purchaseSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  quantity: z.number().min(1, "Must purchase at least 1 ticket"),
+});
 
 export default function EventDetails() {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    quantity: 1,
+
+  const { data: event, isLoading } = useQuery({
+    queryKey: ['events', eventId],
+    queryFn: () => events.getOne(eventId!),
+    enabled: !!eventId,
   });
 
-  const event = dummyEvents[eventId || ""];
-
-  if (!event) {
-    return <div className="text-white p-8">Event not found</div>;
-  }
+  const purchaseMutation = useMutation({
+    mutationFn: (data: { name: string; email: string; quantity: number }) => 
+      tickets.purchase({
+        eventId: eventId!,
+        customerName: data.name,
+        customerEmail: data.email,
+        quantity: data.quantity,
+      }),
+    onSuccess: (data) => {
+      toast({
+        title: "Purchase Successful!",
+        description: `Your ticket ID is: ${data.ticket.id}`,
+      });
+      navigate(`/ticket/${data.ticket.id}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Purchase Failed",
+        description: error.response?.data?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    //! Generate random ticket number for Now
-    const ticketId = Math.floor(Math.random() * 1000000);
+    const formData = {
+      name: (e.target as any).name.value,
+      email: (e.target as any).email.value,
+      quantity: parseInt((e.target as any).quantity.value),
+    };
 
-    toast({
-      title: "Purchase Successful!",
-      description: `Your ticket number is: ${ticketId}`,
-    });
+    const validation = purchaseSchema.safeParse(formData);
+    if (!validation.success) {
+      toast({
+        title: "Validation Error",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Redirect to ticket page
-    navigate(`/ticket/${ticketId}`);
+    purchaseMutation.mutate(formData);
   };
+
+  if (isLoading) {
+    return <div className="text-white p-8">Loading...</div>;
+  }
+
+  if (!event) {
+    return <div className="text-white p-8">Event not found</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -62,7 +90,7 @@ export default function EventDetails() {
             <p>Location: {event.location}</p>
             <p>Category: {event.category}</p>
             <p className="text-purple-500 text-xl">
-              Price: Rs.{event.price.toFixed(2)}
+              Price: ${event.price.toFixed(2)}
             </p>
             <p>Available Tickets: {event.availableTickets}</p>
           </div>
@@ -74,48 +102,41 @@ export default function EventDetails() {
             <div>
               <label className="block mb-2">Name</label>
               <Input
+                name="name"
                 required
                 className="bg-gray-800 text-white"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                disabled={purchaseMutation.isPending}
               />
             </div>
             <div>
               <label className="block mb-2">Email</label>
               <Input
-                required
+                name="email"
                 type="email"
+                required
                 className="bg-gray-800 text-white"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                disabled={purchaseMutation.isPending}
               />
             </div>
             <div>
               <label className="block mb-2">Quantity</label>
               <Input
-                required
+                name="quantity"
                 type="number"
                 min="1"
                 max={event.availableTickets}
+                defaultValue="1"
+                required
                 className="bg-gray-800 text-white"
-                value={formData.quantity}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantity: parseInt(e.target.value),
-                  })
-                }
+                disabled={purchaseMutation.isPending}
               />
             </div>
             <Button
               type="submit"
               className="w-full bg-purple-600 hover:bg-purple-700"
+              disabled={purchaseMutation.isPending}
             >
-              Purchase Tickets
+              {purchaseMutation.isPending ? "Processing..." : "Purchase Tickets"}
             </Button>
           </div>
         </form>
