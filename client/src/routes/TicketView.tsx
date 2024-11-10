@@ -1,27 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { TicketDetails } from "@/types";
+import { tickets } from "@/lib/api";
 import { CheckIcon, CopyIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-
-//! Dummy data
-const getDummyTicketData = (id: string): TicketDetails => ({
-  id,
-  customerName: "John Doe",
-  email: "john.doe@example.com",
-  paymentStatus: "paid",
-  purchaseDate: new Date().toISOString(),
-  eventName: "Summer Music Festival",
-});
+import { useQuery } from "@tanstack/react-query";
 
 export default function TicketView() {
   const { ticketId } = useParams();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
+  const { data: ticket, isLoading } = useQuery({
+    queryKey: ['tickets', ticketId],
+    queryFn: () => tickets.getOne(ticketId!),
+    enabled: !!ticketId
+  });
+
   const ticketUrl = window.location.href;
-  const ticketData = getDummyTicketData(ticketId || "");
 
   const handleCopyUrl = async () => {
     try {
@@ -33,7 +29,7 @@ export default function TicketView() {
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.log(err);
+      console.error("Failed to copy URL", err);
       toast({
         title: "Error",
         description: "Failed to copy URL",
@@ -41,6 +37,14 @@ export default function TicketView() {
       });
     }
   };
+
+  if (isLoading) {
+    return <div className="text-white p-8">Loading ticket details...</div>;
+  }
+
+  if (!ticket) {
+    return <div className="text-white p-8">Ticket not found</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -55,35 +59,35 @@ export default function TicketView() {
 
             <div className="grid gap-4 text-left mb-4">
               <div>
-                <p className="text-gray-400">Event</p>
-                <p className="font-semibold">{ticketData.eventName}</p>
-              </div>
-              <div>
                 <p className="text-gray-400">Customer</p>
-                <p className="font-semibold">{ticketData.customerName}</p>
+                <p className="font-semibold">{ticket.customerName}</p>
               </div>
               <div>
                 <p className="text-gray-400">Email</p>
-                <p className="font-semibold">{ticketData.email}</p>
+                <p className="font-semibold">{ticket.customerEmail}</p>
+              </div>
+              <div>
+                <p className="text-gray-400">Quantity</p>
+                <p className="font-semibold">{ticket.quantity} tickets</p>
               </div>
               <div>
                 <p className="text-gray-400">Purchase Date</p>
                 <p className="font-semibold">
-                  {new Date(ticketData.purchaseDate).toLocaleDateString()}
+                  {new Date(ticket.purchaseDate).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <p className="text-gray-400">Payment Status</p>
+                <p className="text-gray-400">Status</p>
                 <p
                   className={`font-semibold ${
-                    ticketData.paymentStatus === "paid"
+                    ticket.status === "paid"
                       ? "text-green-500"
-                      : ticketData.paymentStatus === "pending"
+                      : ticket.status === "pending"
                       ? "text-yellow-500"
                       : "text-red-500"
                   }`}
                 >
-                  {ticketData.paymentStatus.toUpperCase()}
+                  {ticket.status.toUpperCase()}
                 </p>
               </div>
             </div>
